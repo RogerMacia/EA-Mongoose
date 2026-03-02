@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { UserModel, IUser } from './user.js';
 import { OrganizationModel, IOrganization } from './organization.js';
+import { AddressModel, IAddress } from './address.js';
 
 async function runDemo() {
   try {
@@ -13,6 +14,7 @@ async function runDemo() {
     console.log('🧹 Cleaning database...');
     await UserModel.deleteMany({});
     await OrganizationModel.deleteMany({});
+    await AddressModel.deleteMany({});
 
     // --- 3. SEEDING (The missing part) ---
     console.log('🌱 Seeding data...');
@@ -80,7 +82,7 @@ async function runDemo() {
       // Group users by Organization ID
       { $group: { 
           _id: '$organization', 
-          totalUsers: { $sum: 1 },
+          totalUsers: { $sum: 2 },
       }},
       // Lookup is the Aggregation equivalent of Populate
       { $lookup: {
@@ -98,6 +100,47 @@ async function runDemo() {
 
     console.table(stats);
 
+    const billId = users[0]._id;
+    const peterId = users[1]._id;
+
+    const address1 = {
+      country: 'Ireland', city: 'Cork', street: 'Cherry Tree Road', door: 1, user: billId,
+    }
+    const address2 = {
+      country: 'Andorra', city: 'Escaldes', street: 'Carrer les Canals', door: 1, user: peterId,
+    }
+
+    const addedAddress = await AddressModel.create(address1);
+    const addedAddress2 = await AddressModel.create(address2);
+
+    console.log('\n\n');
+    console.log(addedAddress);
+    console.log(addedAddress2);
+
+    const populatedAddress = await AddressModel
+      .findById(addedAddress._id)
+      .populate('user')
+      .lean();
+
+    console.log('\n\n');
+    console.log(populatedAddress);
+
+    const updateAddr = await AddressModel.updateOne(
+      { _id: populatedAddress?._id },
+      { $set: { street: 'Birch road', door: 5 } }
+    );
+
+    const addresses = await AddressModel.find().lean();
+    console.log('\n\n');
+    console.log(addresses);
+
+    const delAddr = await AddressModel.findByIdAndDelete(addedAddress2._id).lean();
+    const remAddr = await AddressModel.find().lean();
+    console.log('\n\nDeleted Address:');
+    console.log(delAddr);
+    console.log('\nRemaining addresses:');
+    console.log(remAddr);
+
   } catch (err) {
     console.error('❌ Error:', err);
   } finally {
@@ -107,4 +150,3 @@ async function runDemo() {
 }
 
 runDemo();
-
