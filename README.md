@@ -39,3 +39,10 @@ Ejecutar JS
 ```
 node dist/mongoogse.js
 ```
+
+
+# Materials consultats
+- Vídeos penjats a Atenea
+
+# Assistència IA
+- Cap
